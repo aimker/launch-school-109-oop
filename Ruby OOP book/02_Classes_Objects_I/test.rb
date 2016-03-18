@@ -20,6 +20,10 @@ class GoodDog
   def info
     "#{name} weighs #{weight} and is #{height} tall."
   end
+
+  def self.whatAmI
+    puts "I'm a GoodDog class."
+  end
 end
 
 roy = GoodDog.new
