@@ -64,7 +64,7 @@ class Catamaran < WaterVehicles
   end
 end
 
-class Motorboat < Catamaran
+class Motorboat < WaterVehicles
   def initialize(km_traveled_per_liter, liters_of_fuel_capacity)
     super(1, 1, km_traveled_per_liter, liters_of_fuel_capacity)
   end
