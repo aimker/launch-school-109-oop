@@ -11,21 +11,17 @@ class Board
     reset
   end
 
-  def get_square_at(key)
-    @squares[key]
-  end
-
   def draw
     puts "     |     |"
-    puts "  #{get_square_at(1)}  |  #{get_square_at(2)}  |  #{get_square_at(3)}"
+    puts "  #{squares[1]}  |  #{squares[2]}  |  #{squares[3]}"
     puts "     |     |"
     puts "-----+-----+-----"
     puts "     |     |"
-    puts "  #{get_square_at(4)}  |  #{get_square_at(5)}  |  #{get_square_at(6)}"
+    puts "  #{squares[4]}  |  #{squares[5]}  |  #{squares[6]}"
     puts "     |     |"
     puts "-----+-----+-----"
     puts "     |     |"
-    puts "  #{get_square_at(7)}  |  #{get_square_at(8)}  |  #{get_square_at(9)}"
+    puts "  #{squares[7]}  |  #{squares[8]}  |  #{squares[9]}"
     puts "     |     |"
   end
 
@@ -51,20 +47,10 @@ class Board
     !!winning_marker
   end
 
-  def count_human_marker(squares)
-    squares.collect(&:marker).count(TTTGame::HUMAN_MARKER)
-  end
-
-  def count_computer_marker(squares)
-    squares.collect(&:marker).count(TTTGame::COMPUTER_MARKER)
-  end
-
   def winning_marker
     WINNING_LINES.each do |line|
-      if count_human_marker(@squares.values_at(*line)) == 3
-        return TTTGame::HUMAN_MARKER
-      elsif count_computer_marker(@squares.values_at(*line)) == 3
-        return TTTGame::COMPUTER_MARKER
+      if squares_array.values_at(*line).uniq.length == 1 && squares_array.values_at(*line).first != ' '
+        return squares_array.values_at(*line).first
       end
     end
     nil
@@ -105,18 +91,18 @@ class Player
 end
 
 class TTTGame
-  HUMAN_MARKER = 'X'
-  COMPUTER_MARKER = 'O'
-  FIRST_TO_MOVE = HUMAN_MARKER
 
   attr_reader :board, :human, :computer
   attr_accessor :current_player
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER, "Aimkerinho")
-    @computer = Player.new(COMPUTER_MARKER, "R2-D2")
+    @human_marker = pick_marker
+    @human = Player.new(@human_marker, "Aimkerinho")
+    @computer_marker = comp_marker
+    @computer = Player.new(@computer_marker, "R2-D2")
     @current_player = @human.marker
+    @first_to_move = @human.marker
   end
 
   def play
@@ -158,13 +144,18 @@ class TTTGame
 
   def pick_marker
     human_marker = nil
-    puts "Pick your marker (1 character long, just press Enter for X):"
+    puts "Pick your marker (O or X):"
     loop do
-      human_marker = gets.chomp
-      break unless human_marker.length > 1
+      human_marker = gets.chomp.upcase
+      break if %w(O X).include? human_marker
       puts "Choose a valid marker"
     end
-    human.marker = human_marker if human_marker.length == 1
+    human_marker
+  end
+
+  def comp_marker
+    return 'O' if human.marker == 'X'
+    return 'X' if human.marker == 'O'
   end
 
   def clear # Exercise 1
@@ -254,7 +245,7 @@ class TTTGame
     Board::WINNING_LINES.each do |line|
       empty = 0
       line.each { |place| empty = place if brd.squares[place].marker == ' '}
-      if brd.squares_array.values_at(*line).count(COMPUTER_MARKER) == 2 && empty != 0
+      if brd.squares_array.values_at(*line).count(computer.marker) == 2 && empty != 0
         square = empty
         return square
         break
@@ -267,7 +258,7 @@ class TTTGame
     Board::WINNING_LINES.each do |line|
       empty = 0
       line.each { |place| empty = place if brd.squares[place].marker == ' ' }
-      if brd.squares_array.values_at(*line).count(HUMAN_MARKER) == 2 && empty != 0
+      if brd.squares_array.values_at(*line).count(human.marker) == 2 && empty != 0
         square = empty
         return square
         break
@@ -307,7 +298,7 @@ class TTTGame
 
   def reset
     board.reset
-    self.current_player = FIRST_TO_MOVE
+    self.current_player = @first_to_move
     system 'clear'
     puts ''
     puts "Let's play again!"
