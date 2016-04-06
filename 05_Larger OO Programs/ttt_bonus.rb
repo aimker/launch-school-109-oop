@@ -1,7 +1,10 @@
+require 'pry'
+
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
                   [[1, 5, 9], [3, 5, 7]]
+  attr_reader :squares
 
   def initialize
     @squares = {}
@@ -28,6 +31,12 @@ class Board
 
   def []=(key, marker)
     @squares[key].marker = marker
+  end
+
+  def squares_array
+    markers = [0]
+    @squares.each_value {|square| markers.push(square.marker)}
+    markers
   end
 
   def unmarked_keys
@@ -86,10 +95,12 @@ class Square
 end
 
 class Player
-  attr_reader :marker
+  attr_accessor :score, :nickname, :marker
 
-  def initialize(marker)
+  def initialize(marker, nickname)
     @marker = marker
+    @score = 0
+    @nickname = nickname
   end
 end
 
@@ -103,13 +114,14 @@ class TTTGame
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_player = FIRST_TO_MOVE
+    @human = Player.new(HUMAN_MARKER, "Aimkerinho")
+    @computer = Player.new(COMPUTER_MARKER, "R2-D2")
+    @current_player = @human.marker
   end
 
   def play
     display_welcome_message
+    # pick_marker
     # system 'clear'
     loop do
       display_board
@@ -120,7 +132,12 @@ class TTTGame
         clear_screen_and_display_board if human_turn?
       end
       clear_screen_and_display_board
+      score_keeper
       display_result
+      if is_there_a_tournament_winner?
+        display_tournament_winner
+        score_reset
+      end
       break unless play_again?
       reset
     end
@@ -139,12 +156,24 @@ class TTTGame
     puts ""
   end
 
+  def pick_marker
+    human_marker = nil
+    puts "Pick your marker (1 character long, just press Enter for X):"
+    loop do
+      human_marker = gets.chomp
+      break unless human_marker.length > 1
+      puts "Choose a valid marker"
+    end
+    human.marker = human_marker if human_marker.length == 1
+  end
+
   def clear # Exercise 1
     system 'clear'
   end
 
   def display_board # Exercise 2
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "#{human.nickname} is a #{human.marker}. #{computer.nickname} is a #{computer.marker}."
+    puts "#{human.nickname}: #{human.score}, #{computer.nickname}: #{computer.score}"
     puts ""
     board.draw
     puts ""
@@ -157,30 +186,61 @@ class TTTGame
 
   def display_result
     if board.winning_marker == human.marker
-      puts "You won!"
+      puts "#{human.nickname} won!"
     elsif board.winning_marker == computer.marker
-      puts "Computer won!"
+      puts "#{computer.nickname} won!"
     else
       puts "It's a tie!"
     end
   end
 
+  def score_keeper
+    if board.winning_marker == human.marker
+      human.score += 1
+    elsif board.winning_marker == computer.marker
+      computer.score += 1
+    end
+  end
+
+  def score_reset
+    human.score = 0
+    computer.score = 0
+  end
+
+  def is_there_a_tournament_winner?
+    human.score == 5 || computer.score == 5
+  end
+
+  def display_tournament_winner
+    if human.score == 5
+      puts "#{human.nickname} won the 5-score tournament!"
+    elsif computer.score == 5
+      puts "#{computer.nickname} won the 5-score tournament!"
+    end
+  end
+
   def current_player_moves
-    if current_player == HUMAN_MARKER
+    if current_player == human.marker
       human_moves
-      self.current_player = COMPUTER_MARKER
-    elsif current_player == COMPUTER_MARKER
+      self.current_player = computer.marker
+    elsif current_player == computer.marker
       computer_moves
-      self.current_player = HUMAN_MARKER
+      self.current_player = human.marker
     end
   end
 
   def human_turn?
-    current_player == HUMAN_MARKER
+    current_player == human.marker
+  end
+
+  def joinor(delimiter=', ', last_word ='or') # BONUS 1
+    joined_squares = board.unmarked_keys
+    joined_squares[-1] = joined_squares.last.to_s.prepend(" ").prepend(last_word) unless board.unmarked_keys.length == 1
+    joined_squares.join(delimiter)
   end
 
   def human_moves
-    puts "Choose a square  (#{board.unmarked_keys.join(", ")}): "
+    puts "Choose a square  (#{joinor}): "
     square = nil
     loop do
       square = gets.chomp.to_i
@@ -190,8 +250,47 @@ class TTTGame
     board[square] =  human.marker
   end
 
+  def computer_attack_position(brd, square, empty) # Attacking block
+    Board::WINNING_LINES.each do |line|
+      empty = 0
+      line.each { |place| empty = place if brd.squares[place].marker == ' '}
+      if brd.squares_array.values_at(*line).count(COMPUTER_MARKER) == 2 && empty != 0
+        square = empty
+        return square
+        break
+      end
+    end
+    0
+  end
+
+  def computer_defend_position(brd, square, empty) # Defensive block
+    Board::WINNING_LINES.each do |line|
+      empty = 0
+      line.each { |place| empty = place if brd.squares[place].marker == ' ' }
+      if brd.squares_array.values_at(*line).count(HUMAN_MARKER) == 2 && empty != 0
+        square = empty
+        return square
+        break
+      end
+    end
+    0
+  end
+
+  def is_central_available?(brd) # Checks if central piece is free
+    brd.unmarked_keys.include?(5)
+  end
+
   def computer_moves
-    board[board.unmarked_keys.to_a.sample] = computer.marker
+    square = 0
+    empty_square = 0
+    # binding.pry
+    square = computer_attack_position(board, square, empty_square) if square == 0
+    # binding.pry
+    square = computer_defend_position(board, square, empty_square) if square == 0
+    # binding.pry
+    square = 5 if square == 0 && is_central_available?(board)
+    square = board.unmarked_keys.sample if square == 0
+    board[square] = computer.marker
   end
 
   def play_again?
