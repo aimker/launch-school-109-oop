@@ -49,7 +49,8 @@ class Board
 
   def winning_marker
     WINNING_LINES.each do |line|
-      if squares_array.values_at(*line).uniq.length == 1 && squares_array.values_at(*line).first != ' '
+      if squares_array.values_at(*line).uniq.length == 1 &&
+         squares_array.values_at(*line).first != Square::INITIAL_MARKER
         return squares_array.values_at(*line).first
       end
     end
