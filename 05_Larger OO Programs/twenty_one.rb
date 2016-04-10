@@ -1,5 +1,3 @@
-require 'pry'
-
 class Participant
   # what goes in here? all the redundant behaviors from Player and Dealer?
   attr_accessor :hand, :total
@@ -55,12 +53,6 @@ class Deck
   end
 end
 
-class Card
-  def initialize
-    # what are the "states" of a card?
-  end
-end
-
 class Game
   attr_accessor :player, :dealer, :deck
 
@@ -74,7 +66,6 @@ class Game
     # what's the sequence of steps to execute the game play?
     loop do
     deal_cards
-    # binding.pry
     show_cards(true)
     unless player.blackjack? || dealer.blackjack?
       player_turn
@@ -83,7 +74,6 @@ class Game
         puts "Now it's the dealer's turn"
         sleep 2
         dealer_turn
-        # show_cards
       end
     end
     show_result
@@ -104,10 +94,10 @@ class Game
         show_cards(true)
         break if player.bust? || player.score == 21
       elsif answer.downcase == 'stay'
-        puts "You chose to stay."
+        puts 'You chose to stay.'
         break
       else
-        puts "Please insert a valid answer"
+        puts 'Please insert a valid answer'
         next
       end
     end
@@ -146,22 +136,22 @@ class Game
     end
 
     puts "Your score is #{player.score}"
-    puts "Dealer's score is #{dealer.score}" unless player.bust? || player.blackjack? || players_turn
+    puts "Dealer's score is #{dealer.score}" unless player.bust?|| player.blackjack? || players_turn
   end
 
   def show_result
     if player.blackjack?
-      puts "Blackjack! You won!"
+      puts 'Blackjack! You won!'
     elsif dealer.blackjack?
-      puts "Blackjack! Dealer won..."
+      puts 'Blackjack! Dealer won...'
     elsif player.bust?
-      puts "Bust! Dealer won.."
+      puts 'Bust! Dealer won..'
     elsif dealer.bust?
-      puts "Dealer bust! You won!!"
+      puts 'Dealer bust! You won!!'
     elsif player.score > dealer.score
-      puts "You won!"
+      puts 'You won!'
     elsif player.score < dealer.score
-      puts "Dealer won..."
+      puts 'Dealer won...'
     else
       puts "It's a tie."
     end
@@ -170,10 +160,10 @@ class Game
   def play_again?
     answer = nil
     loop do
-      puts "Would you like to play again? (y/n)"
+      puts 'Would you like to play again? (y/n)'
       answer = gets.chomp.downcase
       break if %w(y n).include? answer
-      puts "Sorry, must be y or n."
+      puts 'Sorry, must be y or n.'
     end
 
     answer == 'y'
@@ -185,7 +175,5 @@ class Game
     @deck = Deck.new
   end
 end
-
-
 
 Game.new.start
